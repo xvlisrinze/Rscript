@@ -28,8 +28,8 @@ local modes = {
 	"Other Team"
 }
 local modeIndex = 1
-local smoothness = 0.15
-local screenRadius = 0.40
+local smoothness = 0.25
+local screenRadius = 0.70
 local localCharacter, localRoot
 local closestTarget = nil
 local isTapDown = false
@@ -342,7 +342,7 @@ RunService.RenderStepped:Connect(function()
 	end
 	closestTarget = FindTarget()
 	if isTapDown and closestTarget then
-		local targetCF = CFrame.new(Camera.CFrame.Position, closestTarget.Position - Vector3.new(0, 0, 0))
+		local targetCF = CFrame.new(Camera.CFrame.Position, closestTarget.Position - Vector3.new(0, 1.2, 0))
 		Camera.CFrame = Camera.CFrame:Lerp(targetCF, smoothness)
 	end
 end)
