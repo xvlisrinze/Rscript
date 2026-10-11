@@ -28,7 +28,7 @@ local modes = {
 	"Other Team"
 }
 local modeIndex = 1
-local smoothness = 0.30
+local smoothness = 0.15
 local screenRadius = 0.40
 local localCharacter, localRoot
 local closestTarget = nil
