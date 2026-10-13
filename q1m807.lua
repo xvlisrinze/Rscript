@@ -21,9 +21,9 @@ local config = {
 		"Team sendiri",
 		"Team lain"
 	},
-	onScreen = true,       -- Hanya ambil musuh yang ada di dalam lingkaran
-	showCircle = true,     -- Tampilkan border lingkaran
-	aimModeIndex = 1,
+	onScreen = false,
+	showCircle = false,
+	aimModeIndex = 2,
 	aimModes = {"Camera", "Silent", "Rotate"},
 	uiPosition = UDim2.new(0, 200, 0.5, -200),
 	settingsPosition = UDim2.new(0, 185, 0.5, -90)
@@ -53,27 +53,36 @@ end
 local gui = create("ScreenGui", { Name = "AimbotUI", ResetOnSpawn = false })
 pcall(function() gui.Parent = game:GetService("CoreGui") end)
 if not gui.Parent then gui.Parent = player:WaitForChild("PlayerGui") end
-
--- 🔴 LINGKARAN DI TENGAH LAYAR — HANYA BORDER
 local aimCircle = create("Frame", {
 	Size = UDim2.fromScale(config.screenRadius*2, config.screenRadius*2),
-	Position = UDim2.new(0.5, 0, 0.5, 0),    -- PERSIS TENGAH LAYAR
+	Position = UDim2.new(0.5, 0, 0.5, 0),
 	AnchorPoint = Vector2.new(0.5, 0.5),
-	BackgroundTransparency = 1,              -- DALAMAN TRANSPARAN
+	BackgroundTransparency = 1,
 	Visible = config.showCircle
 }, gui)
-local circleBorder = create("Frame", {
-	Size = UDim2.new(1, -2, 1, -2),
+local circleOuter = create("Frame", {
+	Size = UDim2.new(1, 0, 1, 0),
 	Position = UDim2.new(0.5, 0, 0.5, 0),
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	BackgroundColor3 = Color3.new(1, 0, 0),
-	BackgroundTransparency = 1,
-	BorderSizePixel = 2,                      -- KETEBALAN BORDER
-	BorderColor3 = Color3.new(1, 0, 0),       -- WARNA MERAH
+	BackgroundTransparency = 0,
 }, aimCircle)
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0.5, 0)
-corner.Parent = circleBorder
+local circleInner = create("Frame", {
+	Size = UDim2.new(1, -4, 1, -4),
+	Position = UDim2.new(0.5, 0, 0.5, 0),
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	BackgroundColor3 = Color3.new(0, 0, 0),
+	BackgroundTransparency = 1,
+}, circleOuter)
+
+local cornerOuter = Instance.new("UICorner")
+cornerOuter.CornerRadius = UDim.new(0.5, 0)
+cornerOuter.Parent = circleOuter
+
+local cornerInner = Instance.new("UICorner")
+cornerInner.CornerRadius = UDim.new(0.5, 0)
+cornerInner.Parent = circleInner
+
 
 -- Main Panel
 local main = create("Frame", {
