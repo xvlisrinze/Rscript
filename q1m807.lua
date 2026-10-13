@@ -21,8 +21,10 @@ local config = {
 		"Team sendiri",
 		"Team lain"
 	},
-	showCircle = false,
-	aimMode = "Camera",
+	onScreen = true,       -- Hanya ambil musuh yang ada di dalam lingkaran
+	showCircle = true,     -- Tampilkan border lingkaran
+	aimModeIndex = 1,
+	aimModes = {"Camera", "Silent", "Rotate"},
 	uiPosition = UDim2.new(0, 200, 0.5, -200),
 	settingsPosition = UDim2.new(0, 185, 0.5, -90)
 }
@@ -52,21 +54,22 @@ local gui = create("ScreenGui", { Name = "AimbotUI", ResetOnSpawn = false })
 pcall(function() gui.Parent = game:GetService("CoreGui") end)
 if not gui.Parent then gui.Parent = player:WaitForChild("PlayerGui") end
 
--- Lingkaran tengah layar
+-- 🔴 LINGKARAN DI TENGAH LAYAR — HANYA BORDER
 local aimCircle = create("Frame", {
 	Size = UDim2.fromScale(config.screenRadius*2, config.screenRadius*2),
-	Position = UDim2.fromScale(0.5, 0.5),
+	Position = UDim2.new(0.5, 0, 0.5, 0),    -- PERSIS TENGAH LAYAR
 	AnchorPoint = Vector2.new(0.5, 0.5),
-	BackgroundTransparency = 1,
+	BackgroundTransparency = 1,              -- DALAMAN TRANSPARAN
 	Visible = config.showCircle
 }, gui)
 local circleBorder = create("Frame", {
 	Size = UDim2.new(1, -2, 1, -2),
-	Position = UDim2.fromOffset(1, 1),
+	Position = UDim2.new(0.5, 0, 0.5, 0),
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	BackgroundColor3 = Color3.new(1, 0, 0),
-	BackgroundTransparency = 0.7,
-	BorderSizePixel = 0
+	BackgroundTransparency = 1,
+	BorderSizePixel = 2,                      -- KETEBALAN BORDER
+	BorderColor3 = Color3.new(1, 0, 0),       -- WARNA MERAH
 }, aimCircle)
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0.5, 0)
@@ -96,7 +99,6 @@ create("TextLabel", {
 	Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left
 }, main)
 
--- ✅ GUNAKAN makeButton SEPERTI VERSI LAMA — ini kunci biar gear muncul!
 local gear = makeButton(main, "⚙️", UDim2.fromOffset(32, 30), UDim2.new(1, -37, 0.5, -15))
 gear.BackgroundTransparency = 1
 gear.BorderSizePixel = 0
@@ -109,7 +111,7 @@ end)
 
 -- Settings Panel
 local settings = create("Frame", {
-	Size = UDim2.fromOffset(245, 360),
+	Size = UDim2.fromOffset(245, 400),
 	Position = config.settingsPosition,
 	BackgroundColor3 = Color3.fromRGB(18, 18, 18),
 	BorderColor3 = Color3.fromRGB(90, 90, 90),
@@ -143,7 +145,7 @@ end)
 
 gear.Activated:Connect(function() settings.Visible = not settings.Visible end)
 
--- Radius Slider
+-- === Radius Slider ===
 local radiusLabel = create("TextLabel", {
 	Size = UDim2.new(1, -20, 0, 22), Position = UDim2.fromOffset(10, 38),
 	BackgroundTransparency = 1, Text = "Radius: "..config.radius.." studs",
@@ -195,23 +197,98 @@ UserInputService.InputEnded:Connect(function(input)
 	end
 end)
 
--- Mode Button
-local modeButton = makeButton(settings, config.modes[config.modeIndex], UDim2.new(1, -20, 0, 32), UDim2.fromOffset(10, 95))
+-- === Screen Radius (Circle Size) Slider ===
+local screenLabel = create("TextLabel", {
+	Size = UDim2.new(1, -20, 0, 22), Position = UDim2.fromOffset(10, 95),
+	BackgroundTransparency = 1, Text = "Circle Size: "..string.format("%.2f", config.screenRadius),
+	TextColor3 = Color3.new(1, 1, 1), TextSize = 13, Font = Enum.Font.Gotham,
+	TextXAlignment = Enum.TextXAlignment.Left
+}, settings)
+
+local screenSlider = create("Frame", {
+	Size = UDim2.new(1, -20, 0, 8), Position = UDim2.fromOffset(10, 120),
+	BackgroundColor3 = Color3.fromRGB(65, 65, 65), BorderSizePixel = 0
+}, settings)
+local screenFill = create("Frame", {
+	Size = UDim2.new(config.screenRadius, 0, 1, 0),
+	BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0
+}, screenSlider)
+local screenKnob = create("Frame", {
+	Size = UDim2.fromOffset(12, 16), AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.new(config.screenRadius, 0, 0.5, 0),
+	BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0
+}, screenSlider)
+
+local function setScreenRadius(x)
+	local a = math.clamp((x - screenSlider.AbsolutePosition.X) / screenSlider.AbsoluteSize.X, 0.05, 0.9)
+	config.screenRadius = math.round(a * 100) / 100
+	screenFill.Size = UDim2.new(config.screenRadius, 0, 1, 0)
+	screenKnob.Position = UDim2.new(config.screenRadius, 0, 0.5, 0)
+	screenLabel.Text = "Circle Size: "..string.format("%.2f", config.screenRadius)
+	-- Update ukuran lingkaran langsung
+	aimCircle.Size = UDim2.fromScale(config.screenRadius*2, config.screenRadius*2)
+end
+
+local screenSliding = false
+screenSlider.InputBegan:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+		screenSliding = true
+		setScreenRadius(i.Position.X)
+	end
+end)
+screenKnob.InputBegan:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+		screenSliding = true
+		setScreenRadius(i.Position.X)
+	end
+end)
+UserInputService.InputChanged:Connect(function(i)
+	if screenSliding and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+		setScreenRadius(i.Position.X)
+	end
+end)
+UserInputService.InputEnded:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+		screenSliding = false
+	end
+end)
+
+-- === Mode Tombol ===
+local modeButton = makeButton(settings, config.modes[config.modeIndex], UDim2.new(1, -20, 0, 32), UDim2.fromOffset(10, 150))
 modeButton.Activated:Connect(function()
 	config.modeIndex = config.modeIndex % #config.modes + 1
 	modeButton.Text = config.modes[config.modeIndex]
 end)
 
--- Show Circle Toggle
+-- === OnScreen Toggle ===
+local onScreenToggle = create("TextButton", {
+	Size = UDim2.fromOffset(16, 16),
+	Position = UDim2.fromOffset(10, 190),
+	BackgroundColor3 = config.onScreen and Color3.new(1, 1, 1) or Color3.new(0, 0, 0),
+	BorderColor3 = Color3.new(1, 1, 1), BorderSizePixel = 1, Text = ""
+}, settings)
+create("TextLabel", {
+	Size = UDim2.new(1, -36, 0, 16),
+	Position = UDim2.fromOffset(32, 190),
+	BackgroundTransparency = 1, Text = "Only Target in Circle",
+	TextColor3 = Color3.new(1, 1, 1), TextSize = 12, Font = Enum.Font.Gotham,
+	TextXAlignment = Enum.TextXAlignment.Left
+}, settings)
+onScreenToggle.Activated:Connect(function()
+	config.onScreen = not config.onScreen
+	onScreenToggle.BackgroundColor3 = config.onScreen and Color3.new(1, 1, 1) or Color3.new(0, 0, 0)
+end)
+
+-- === Show Circle Toggle ===
 local showCircleToggle = create("TextButton", {
 	Size = UDim2.fromOffset(16, 16),
-	Position = UDim2.fromOffset(10, 135),
+	Position = UDim2.fromOffset(10, 215),
 	BackgroundColor3 = config.showCircle and Color3.new(1, 1, 1) or Color3.new(0, 0, 0),
 	BorderColor3 = Color3.new(1, 1, 1), BorderSizePixel = 1, Text = ""
 }, settings)
 create("TextLabel", {
 	Size = UDim2.new(1, -36, 0, 16),
-	Position = UDim2.fromOffset(32, 135),
+	Position = UDim2.fromOffset(32, 215),
 	BackgroundTransparency = 1, Text = "Show Circle",
 	TextColor3 = Color3.new(1, 1, 1), TextSize = 12, Font = Enum.Font.Gotham,
 	TextXAlignment = Enum.TextXAlignment.Left
@@ -222,16 +299,23 @@ showCircleToggle.Activated:Connect(function()
 	aimCircle.Visible = config.showCircle
 end)
 
--- Smoothness Slider
+-- === Aim Mode Tombol ===
+local aimModeButton = makeButton(settings, config.aimModes[config.aimModeIndex], UDim2.new(1, -20, 0, 32), UDim2.fromOffset(10, 245))
+aimModeButton.Activated:Connect(function()
+	config.aimModeIndex = config.aimModeIndex % #config.aimModes + 1
+	aimModeButton.Text = config.aimModes[config.aimModeIndex]
+end)
+
+-- === Smoothness Slider ===
 local smoothLabel = create("TextLabel", {
-	Size = UDim2.new(1, -20, 0, 22), Position = UDim2.fromOffset(10, 165),
+	Size = UDim2.new(1, -20, 0, 22), Position = UDim2.fromOffset(10, 285),
 	BackgroundTransparency = 1, Text = "Smoothness: "..config.smoothness,
 	TextColor3 = Color3.new(1, 1, 1), TextSize = 12, Font = Enum.Font.Gotham,
 	TextXAlignment = Enum.TextXAlignment.Left
 }, settings)
 
 local smoothSlider = create("Frame", {
-	Size = UDim2.new(1, -20, 0, 8), Position = UDim2.fromOffset(10, 190),
+	Size = UDim2.new(1, -20, 0, 8), Position = UDim2.fromOffset(10, 310),
 	BackgroundColor3 = Color3.fromRGB(65, 65, 65), BorderSizePixel = 0
 }, settings)
 local smoothFill = create("Frame", {
@@ -253,15 +337,18 @@ local function setSmooth(x)
 end
 
 local smoothSliding = false
-local function inputSmooth(i)
+smoothSlider.InputBegan:Connect(function(i)
 	if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 		smoothSliding = true
 		setSmooth(i.Position.X)
 	end
-end
-smoothSlider.InputBegan:Connect(inputSmooth)
-smoothKnob.InputBegan:Connect(inputSmooth)
-smoothFill.InputBegan:Connect(inputSmooth)
+end)
+smoothKnob.InputBegan:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+		smoothSliding = true
+		setSmooth(i.Position.X)
+	end
+end)
 UserInputService.InputChanged:Connect(function(i)
 	if smoothSliding and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
 		setSmooth(i.Position.X)
@@ -274,13 +361,13 @@ UserInputService.InputEnded:Connect(function(i)
 end)
 
 create("TextLabel", {
-	Size = UDim2.new(1, -20, 0, 35), Position = UDim2.fromOffset(10, 220),
-	BackgroundTransparency = 1, Text = "Tap Screen/Buttons to use AimBot",
+	Size = UDim2.new(1, -20, 0, 35), Position = UDim2.fromOffset(10, 340),
+	BackgroundTransparency = 1, Text = "TAP layar = Aim | Hanya aktif saat tombol ditekan",
 	TextColor3 = Color3.fromRGB(160, 160, 160), TextSize = 11,
 	Font = Enum.Font.Gotham, TextWrapped = true
 }, settings)
 
--- === FUNGSI AIM — PAKAI LOGIKA DARI VERSI LAMA YANG TERBUKTI WORK ===
+-- === FUNGSI AIM ===
 local function IsInScreenCenter(worldPos)
 	local scrPos, onScr = Camera:WorldToViewportPoint(worldPos)
 	if not onScr then return false end
@@ -300,11 +387,11 @@ end
 
 local function IsEnemyTeam(targetPlayer)
 	if not targetPlayer or not targetPlayer:IsA("Player") then return true end
-	if config.modeIndex == 4 then return false end -- Team sendiri
-	if config.modeIndex == 1 then return true end  -- Semua
-	if config.modeIndex == 2 then return true end  -- Players saja
-	if config.modeIndex == 3 then return false end -- NPC saja
-	if config.modeIndex == 5 then                    -- Team lain
+	if config.modeIndex == 4 then return false end
+	if config.modeIndex == 1 then return true end
+	if config.modeIndex == 2 then return true end
+	if config.modeIndex == 3 then return false end
+	if config.modeIndex == 5 then
 		return targetPlayer.Team ~= player.Team
 	end
 	return true
@@ -319,7 +406,8 @@ local function FindTarget()
 			local hrp = char and char:FindFirstChild("HumanoidRootPart")
 			if hrp and not ShouldSkipTarget(char) and IsEnemyTeam(v) then
 				local dist = (localRoot.Position - hrp.Position).Magnitude
-				if dist <= config.radius and dist < nearestDist and IsInScreenCenter(hrp.Position) then
+				local inScreen = not config.onScreen or IsInScreenCenter(hrp.Position)
+				if dist <= config.radius and dist < nearestDist and inScreen then
 					nearestDist = dist
 					nearest = hrp
 				end
@@ -333,7 +421,8 @@ local function FindTarget()
 				local hrp = mdl:FindFirstChild("HumanoidRootPart")
 				if hrp and not ShouldSkipTarget(mdl) then
 					local dist = (localRoot.Position - hrp.Position).Magnitude
-					if dist <= config.radius and dist < nearestDist and IsInScreenCenter(hrp.Position) then
+					local inScreen = not config.onScreen or IsInScreenCenter(hrp.Position)
+					if dist <= config.radius and dist < nearestDist and inScreen then
 						nearestDist = dist
 						nearest = hrp
 					end
@@ -354,9 +443,9 @@ if player.Character then
 	localRoot = localCharacter:FindFirstChild("HumanoidRootPart")
 end
 
--- Input — PAKAI LOGIKA DARI VERSI LAMA
+-- Input
 UserInputService.InputBegan:Connect(function(input, gp)
-	if gp then return end  -- ✅ Penting! Abaikan input sistem, hanya tangani sentuhan layar
+	if gp then return end
 	if input.UserInputType == Enum.UserInputType.Touch then isTapDown = true end
 end)
 UserInputService.InputEnded:Connect(function(input)
@@ -365,16 +454,24 @@ end)
 
 -- Main Loop
 RunService.RenderStepped:Connect(function()
-	aimCircle.Visible = config.showCircle
-	aimCircle.Size = UDim2.fromScale(config.screenRadius*2, config.screenRadius*2)
 	if not config.enabled or not localRoot then
 		closestTarget = nil
 		return
 	end
 	closestTarget = FindTarget()
 	if isTapDown and closestTarget then
-		local targetPos = closestTarget.Position - Vector3.new(0, 1.2, 0)
-		local targetCF = CFrame.new(Camera.CFrame.Position, targetPos)
-		Camera.CFrame = Camera.CFrame:Lerp(targetCF, config.smoothness)
+		local targetPos = closestTarget.Position - Vector3.new(0, 1.2, 0) -- target kepala
+		local aimMode = config.aimModes[config.aimModeIndex]
+		if aimMode == "Camera" then
+			local targetCF = CFrame.new(Camera.CFrame.Position, targetPos)
+			Camera.CFrame = Camera.CFrame:Lerp(targetCF, config.smoothness)
+		elseif aimMode == "Silent" then
+			-- Silent mode: hitbox dihitung tapi kamera tidak bergerak
+		elseif aimMode == "Rotate" then
+			local dir = (targetPos - localRoot.Position)
+			dir = Vector3.new(dir.X, 0, dir.Z).Unit
+			local lookAt = localRoot.Position + dir
+			localRoot.CFrame = CFrame.new(localRoot.Position, lookAt)
+		end
 	end
 end)
