@@ -21,7 +21,7 @@ local config = {
 		"Team sendiri",
 		"Team lain"
 	},
-	uiPosition = UDim2.new(0, 200, 0.5, 200),
+	uiPosition = UDim2.new(0, 200, 0.5, -200),
 	settingsPosition = UDim2.new(0, 185, 0.5, -90)
 }
 
