@@ -10,21 +10,21 @@ local player = Players.LocalPlayer
 -- === CONFIG ===
 local config = {
 	enabled = false,
-	radius = 1000,
-	smoothness = 0.12,
+	radius = 250,
+	smoothness = 0.65,
 	screenRadius = 0.35,
-	modeIndex = 1,
+	modeIndex = 2,
 	modes = {
-		"Semua (Players + NPC)",
-		"Players saja",
-		"NPC saja",
-		"Team sendiri",
-		"Team lain"
+		"All [ Player & Npc ]",
+		"Player",
+		"Npc",
+		"Same Team",
+		"Other Team"
 	},
 	onScreen = false,
 	showCircle = false,
 	WallCheck = true,
-	aimModeIndex = 2,
+	aimModeIndex = 1,
 	aimModes = {"Camera", "Silent", "Rotate"},
 	uiPosition = UDim2.new(0, 200, 0.5, -200),
 	settingsPosition = UDim2.new(0, 185, 0.5, -90)
@@ -367,7 +367,7 @@ UserInputService.InputEnded:Connect(function(i)
 end)
 create("TextLabel", {
 	Size = UDim2.new(1, -20, 0, 35), Position = UDim2.fromOffset(10, 340),
-	BackgroundTransparency = 1, Text = "TAP layar = Aim | Hanya aktif saat tombol ditekan",
+	BackgroundTransparency = 1, Text = "Tap Screen For Triggered AutoAim",
 	TextColor3 = Color3.fromRGB(160, 160, 160), TextSize = 11,
 	Font = Enum.Font.Gotham, TextWrapped = true
 }, settings)
