@@ -1,4 +1,3 @@
--- Services
 local Players = game:GetService("Players")
 local Teams = game:GetService("Teams")
 local UserInputService = game:GetService("UserInputService")
@@ -7,7 +6,6 @@ local RunService = game:GetService("RunService")
 local Camera = Workspace.CurrentCamera
 local player = Players.LocalPlayer
 
--- === CONFIG ===
 local config = {
 	enabled = false,
 	radius = 250,
@@ -31,15 +29,12 @@ local config = {
 }
 
 local localCharacter, localRoot, closestTarget, isTapDown = nil, nil, nil, false
-
--- === FUNGSI BANTUAN ===
 local function create(class, props, parent)
 	local obj = Instance.new(class)
 	for k, v in pairs(props) do obj[k] = v end
 	obj.Parent = parent
 	return obj
 end
-
 local function makeButton(parent, text, size, pos)
 	return create("TextButton", {
 		Size = size, Position = pos,
@@ -49,8 +44,6 @@ local function makeButton(parent, text, size, pos)
 		TextSize = 13, Font = Enum.Font.Gotham, AutoButtonColor = true
 	}, parent)
 end
-
--- === UI ===
 local gui = create("ScreenGui", { Name = "AimbotUI", ResetOnSpawn = false })
 pcall(function() gui.Parent = game:GetService("CoreGui") end)
 if not gui.Parent then gui.Parent = player:WaitForChild("PlayerGui") end
@@ -80,11 +73,9 @@ local circleInner = create("Frame", {
 	BackgroundColor3 = Color3.new(0, 0, 0),
 	BackgroundTransparency = 1,
 }, circleOuter)
-
 local cornerOuter = Instance.new("UICorner")
 cornerOuter.CornerRadius = UDim.new(0.5, 0)
 cornerOuter.Parent = circleOuter
-
 local cornerInner = Instance.new("UICorner")
 cornerInner.CornerRadius = UDim.new(0.5, 0)
 cornerInner.Parent = circleInner
@@ -101,7 +92,6 @@ local toggle = create("TextButton", {
 	BorderColor3 = Color3.new(1, 1, 1),
 	BorderSizePixel = 1, Text = ""
 }, main)
-
 create("TextLabel", {
 	Size = UDim2.fromOffset(70, 40),
 	Position = UDim2.fromOffset(34, 0),
@@ -109,7 +99,6 @@ create("TextLabel", {
 	TextColor3 = Color3.new(1, 1, 1), TextSize = 14,
 	Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left
 }, main)
-
 local gear = makeButton(main, "⚙️", UDim2.fromOffset(32, 30), UDim2.new(1, -37, 0.5, -15))
 gear.BackgroundTransparency = 1
 gear.BorderSizePixel = 0
@@ -125,14 +114,12 @@ local settings = create("Frame", {
 	BorderColor3 = Color3.fromRGB(90, 90, 90),
 	Visible = false
 }, gui)
-
 local dragBar = create("TextButton", {
 	Size = UDim2.new(1, 0, 0, 30),
 	BackgroundColor3 = Color3.fromRGB(30, 30, 30),
 	BorderSizePixel = 0, Text = "⚙️ Settings",
 	TextColor3 = Color3.new(1, 1, 1), TextSize = 14, Font = Enum.Font.Gotham
 }, settings)
-
 local dragging, dragStart, startPos = false, nil, nil
 dragBar.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -150,7 +137,6 @@ UserInputService.InputEnded:Connect(function(input)
 		dragging = false
 	end
 end)
-
 gear.Activated:Connect(function() settings.Visible = not settings.Visible end)
 local radiusLabel = create("TextLabel", {
 	Size = UDim2.new(1, -20, 0, 22), Position = UDim2.fromOffset(10, 38),
@@ -158,7 +144,6 @@ local radiusLabel = create("TextLabel", {
 	TextColor3 = Color3.new(1, 1, 1), TextSize = 13, Font = Enum.Font.Gotham,
 	TextXAlignment = Enum.TextXAlignment.Left
 }, settings)
-
 local slider = create("Frame", {
 	Size = UDim2.new(1, -20, 0, 8), Position = UDim2.fromOffset(10, 68),
 	BackgroundColor3 = Color3.fromRGB(65, 65, 65), BorderSizePixel = 0
@@ -172,7 +157,6 @@ local knob = create("Frame", {
 	Position = UDim2.new((config.radius - 1) / 4999, 0, 0.5, 0),
 	BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0
 }, slider)
-
 local function setRadius(x)
 	local alpha = math.clamp((x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
 	config.radius = math.clamp(math.floor(1 + alpha * 4999 + 0.5), 1, 5000)
@@ -275,6 +259,24 @@ onScreenToggle.Activated:Connect(function()
 	config.onScreen = not config.onScreen
 	onScreenToggle.BackgroundColor3 = config.onScreen and Color3.new(1, 1, 1) or Color3.new(0, 0, 0)
 end)
+local showCircleToggle = create("TextButton", {
+	Size = UDim2.fromOffset(16, 16),
+	Position = UDim2.fromOffset(10, 215),
+	BackgroundColor3 = config.showCircle and Color3.new(1, 1, 1) or Color3.new(0, 0, 0),
+	BorderColor3 = Color3.new(1, 1, 1), BorderSizePixel = 1, Text = ""
+}, settings)
+create("TextLabel", {
+	Size = UDim2.new(1, -36, 0, 16),
+	Position = UDim2.fromOffset(32, 215),
+	BackgroundTransparency = 1, Text = "[ ⭕ ] Show Circle",
+	TextColor3 = Color3.new(1, 1, 1), TextSize = 12, Font = Enum.Font.Gotham,
+	TextXAlignment = Enum.TextXAlignment.Left
+}, settings)
+showCircleToggle.Activated:Connect(function()
+	config.showCircle = not config.showCircle
+	showCircleToggle.BackgroundColor3 = config.showCircle and Color3.new(1, 1, 1) or Color3.new(0, 0, 0)
+	aimCircle.Visible = config.showCircle
+end)
 local wallCheckToggle = create("TextButton", {
 	Size = UDim2.fromOffset(16, 16),
 	Position = UDim2.fromOffset(10, 240),
@@ -292,37 +294,19 @@ wallCheckToggle.Activated:Connect(function()
 	config.WallCheck = not config.WallCheck
 	wallCheckToggle.BackgroundColor3 = config.WallCheck and Color3.new(1, 1, 1) or Color3.new(0, 0, 0)
 end)
-local showCircleToggle = create("TextButton", {
-	Size = UDim2.fromOffset(16, 16),
-	Position = UDim2.fromOffset(10, 215),
-	BackgroundColor3 = config.showCircle and Color3.new(1, 1, 1) or Color3.new(0, 0, 0),
-	BorderColor3 = Color3.new(1, 1, 1), BorderSizePixel = 1, Text = ""
-}, settings)
-create("TextLabel", {
-	Size = UDim2.new(1, -36, 0, 16),
-	Position = UDim2.fromOffset(32, 215),
-	BackgroundTransparency = 1, Text = "[ ⭕ ]Show Circle",
-	TextColor3 = Color3.new(1, 1, 1), TextSize = 12, Font = Enum.Font.Gotham,
-	TextXAlignment = Enum.TextXAlignment.Left
-}, settings)
-showCircleToggle.Activated:Connect(function()
-	config.showCircle = not config.showCircle
-	showCircleToggle.BackgroundColor3 = config.showCircle and Color3.new(1, 1, 1) or Color3.new(0, 0, 0)
-	aimCircle.Visible = config.showCircle
-end)
-local aimModeButton = makeButton(settings, config.aimModes[config.aimModeIndex], UDim2.new(1, -20, 0, 32), UDim2.fromOffset(10, 245))
+local aimModeButton = makeButton(settings, config.aimModes[config.aimModeIndex], UDim2.new(1, -20, 0, 32), UDim2.fromOffset(10, 270))
 aimModeButton.Activated:Connect(function()
 	config.aimModeIndex = config.aimModeIndex % #config.aimModes + 1
 	aimModeButton.Text = config.aimModes[config.aimModeIndex]
 end)
 local smoothLabel = create("TextLabel", {
-	Size = UDim2.new(1, -20, 0, 22), Position = UDim2.fromOffset(10, 285),
+	Size = UDim2.new(1, -20, 0, 22), Position = UDim2.fromOffset(10, 310),
 	BackgroundTransparency = 1, Text = "[ ↔️ ] Smoothness: "..config.smoothness,
 	TextColor3 = Color3.new(1, 1, 1), TextSize = 12, Font = Enum.Font.Gotham,
 	TextXAlignment = Enum.TextXAlignment.Left
 }, settings)
 local smoothSlider = create("Frame", {
-	Size = UDim2.new(1, -20, 0, 8), Position = UDim2.fromOffset(10, 310),
+	Size = UDim2.new(1, -20, 0, 8), Position = UDim2.fromOffset(10, 335),
 	BackgroundColor3 = Color3.fromRGB(65, 65, 65), BorderSizePixel = 0
 }, settings)
 local smoothFill = create("Frame", {
